@@ -6,11 +6,11 @@
 #include <stdio.h>
 #include <sys/types.h>
 #include <sys/stat.h>
-#include <unistd.h>
 
 #include "stack.h"
 
 #ifndef _MSC_VER
+#include <unistd.h>
 #include <strings.h>
 #else
 #define strncasecmp	_strnicmp
@@ -168,9 +168,14 @@ is_separator(uint8_t chr)
 	return chr == ' ' || chr == '(' || chr == '\t' || chr == '\n';
 }
 
+#ifdef _MSC_VER
+#define S_ISREG(a)  (a & _S_IFREG)
+#endif
+
  static int
  is_regular_file(const char *path, char * base_folder)
  {
+     int res;
  	if (path[0] != '/') {
  		char *cwd;
 
@@ -191,14 +196,14 @@ is_separator(uint8_t chr)
  			strcat(cwd, path);
 	 	}
  		struct stat path_stat;
-	    stat(cwd, &path_stat);
+	    res = stat(cwd, &path_stat);
 	    free(cwd);
-	    return S_ISREG(path_stat.st_mode);
+	    return ((res == 0) && S_ISREG(path_stat.st_mode)) ? 1 : 0;
  	}
 
     struct stat path_stat;
-    stat(path, &path_stat);
-    return S_ISREG(path_stat.st_mode);
+    res = stat(path, &path_stat);
+    return ((res == 0) && S_ISREG(path_stat.st_mode)) ? 1 : 0;
  }
 
 static hoedown_buffer *
@@ -2782,7 +2787,7 @@ parse_fl(
 {
 	size_t begin = 0;
 	size_t skip = 0;
-	float_args args = {};
+	float_args args = {0};
 	args.type = type;
 	args.caption = NULL;
 
@@ -2832,7 +2837,7 @@ parse_eq(
 {
 	size_t begin = 0;
 	size_t skip = 0;
-	float_args args = {};
+	float_args args = {0};
 	args.type = EQUATION;
 
 	if (data[0] == '(')
@@ -3556,10 +3561,17 @@ parse_yaml(const uint8_t *data, size_t size)
 			int j;
 			for (j = 0 ; j+i+1 < size && data[i+j+1] != ':' && data[i+j+1] != '\n'; j++){}
 			if (data[j+i+1] == ':'){
+#ifdef _MSC_VER
+                char *type = (char *)malloc(j + 3);
+#else
 				char type[j+3];
+#endif
 				memset(type, 0, j+3);
 				memcpy(type, data+i, j+1);
 				j += parse_keyword(type, meta, data+i+j+2, size - i - j - 2);
+#ifdef _MSC_VER
+                free(type);
+#endif
 	       }
 
             i+=j+3;

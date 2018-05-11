@@ -12,7 +12,9 @@
 
 #define USE_XHTML(opt) (opt->flags & SCIDOWN_RENDER_USE_XHTML)
 #define MAX_FILE_SIZE 1000000
-
+#ifdef WIN32
+#define popen _popen
+#endif
 scidown_render_tag
 hoedown_html_is_tag(const uint8_t *data, size_t size, const char *tagname)
 {
