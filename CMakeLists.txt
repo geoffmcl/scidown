@@ -95,11 +95,11 @@ set(${name}_HDRS
 add_library( ${name} ${LIB_TYPE} ${${name}_SRCS} ${${name}_HDRS} )
 list(APPEND add_LIBS ${name})
 # deal with install, if any...
-#install( TARGETS ${name}
-#    RUNTIME DESTINATION bin
-#    LIBRARY DESTINATION lib
-#    ARCHIVE DESTINATION lib )
-#install(FILES ${${name}_HDRS} DESTINATION include)
+install( TARGETS ${name}
+    RUNTIME DESTINATION bin
+    LIBRARY DESTINATION lib
+    ARCHIVE DESTINATION lib )
+install(FILES ${${name}_HDRS} DESTINATION include/hoedown)
 
 add_definitions( -DADD_CHARTER )
 set(name charter)
@@ -171,6 +171,21 @@ set(${name}_HDRS
     ${dir}/common.h
     )
 add_executable( ${name} ${${name}_SRCS} ) # ${${name}_HDRS} )
+if (add_LIBS)
+    target_link_libraries( ${name} ${add_LIBS} )
+endif ()
+if (MSVC)
+    set_target_properties( ${name} PROPERTIES DEBUG_POSTFIX d )
+endif ()
+# deal with install, if any...
+#install( TARGETS ${name} DESTINATION bin )
+
+set(name md2html)
+set(dir bin)
+set(${name}_SRCS
+    ${dir}/${name}.cxx
+    )
+add_executable( ${name} ${${name}_SRCS} )
 if (add_LIBS)
     target_link_libraries( ${name} ${add_LIBS} )
 endif ()
