@@ -15,3 +15,4 @@ libscidown.a
 *.log
 *~
 *.bak
+temp*
