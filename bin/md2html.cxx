@@ -336,7 +336,7 @@ main(int argc, char **argv)
 	/* Parse options */
 	data.basename = argv[0];
 	data.done = 0;
-	data.show_time = 0;
+	data.show_time = 1;
 	data.iunit = DEF_IUNIT;
 	data.ounit = DEF_OUNIT;
 	data.filename = NULL;
@@ -416,12 +416,13 @@ main(int argc, char **argv)
             fprintf(stderr, "I/O errors unable to write output '%s'.\n", OutputFile);
             return 5;
         }
-
+        fprintf(stderr, "%s: HTML output written to '%s'.\n", module, OutputFile);
     }
     else {
+        // no ouput file given - use 'stdout'
         (void)fwrite(ob->data, 1, ob->size, stdout);
-        hoedown_buffer_free(ob);
         if (ferror(stdout)) {
+            hoedown_buffer_free(ob);
             fprintf(stderr, "I/O errors found while writing output.\n");
             return 5;
         }
@@ -439,10 +440,11 @@ main(int argc, char **argv)
 
 		elapsed = (double)(t2 - t1) / CLOCKS_PER_SEC;
 		if (elapsed < 1)
-			fprintf(stderr, "Time spent on rendering: %7.2f ms.\n", elapsed*1e3);
+			fprintf(stderr, "%s: Time spent on rendering: %7.2f ms.\n", module, elapsed*1e3);
 		else
-			fprintf(stderr, "Time spent on rendering: %6.3f s.\n", elapsed);
+			fprintf(stderr, "%s: Time spent on rendering: %6.3f s.\n", module, elapsed);
 	}
+
     if (headContents)
         delete headContents;
 
