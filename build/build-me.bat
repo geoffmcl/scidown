@@ -3,7 +3,11 @@
 @set TMPLOG=bldlog-1.txt
 @set TMPSRC=..
 @set VCVERS=14
+@if "%DOINST%x" == "x" goto SETINST
+@goto DNINST
+:SETINST
 @set DOINST=0
+:DNINST
 @REM ############################################
 @REM NOTE: SPECIAL INSTALL LOCATION
 @REM Adjust to suit your environment
@@ -48,7 +52,9 @@
 @echo Appears a successful build
 @echo.
 @if "%DOINST%x" == "1x" goto DNCHK
-@echo No install at this time... Set DOINST=1
+@echo No install at this time... Set DOINST=1 **OR**
+@echo Run 'cmake -P cmake_install.cmake' to install in %TMPINST%
+@echo which can be reset with '-DCMAKE_INSTALL_PREFIX:PATH=/path/to/install'
 @echo.
 @goto END
 
@@ -66,14 +72,19 @@
 @goto END
 
 :DOINST
-cmake -P cmake_install.cmake
-@REM echo Doing: 'cmake --build . --config release --target INSTALL'
-@REM echo Doing: 'cmake --build . --config release --target INSTALL' >> %TMPLOG%
-@REM cmake --build . --config release --target INSTALL >> %TMPLOG% 2>&1
-@REM fa4 " -- " %TMPLOG%
-
+@REM cmake -P cmake_install.cmake
+@echo Doing: 'cmake --build . --config Debug --target INSTALL'
+@echo Doing: 'cmake --build . --config Debug --target INSTALL' >> %TMPLOG%
+@cmake --build . --config Debug --target INSTALL >> %TMPLOG% 2>&1
+@echo.
+@echo Doing: 'cmake --build . --config release --target INSTALL'
+@echo Doing: 'cmake --build . --config release --target INSTALL' >> %TMPLOG%
+@cmake --build . --config release --target INSTALL >> %TMPLOG% 2>&1
+@echo.
+@fa4 " -- " %TMPLOG%
+@echo.
 @echo Done build and install of %TMPPRJ%...
-
+@echo.
 @goto END
 
 :NOASK
