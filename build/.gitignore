@@ -11,6 +11,7 @@ cmake_install.cmake
 x64/*
 *.user
 *.VC.db
+install_manifest.txt
 Makefile
 *.a
 
