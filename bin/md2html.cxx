@@ -278,6 +278,21 @@ const char *cStyle =
 "}\n"
 "</style>\n";
 
+static const char *lang = "en";
+static const char *charset = "UTF-8";
+
+static void html_escape_buffer(hoedown_buffer *hb)
+{
+    size_t ii, max = hb->size;
+    int i;
+    for (ii = 0; ii < max; ii++) {
+        i = hb->data[ii];
+        if (i == '\\') {
+            hb->data[ii] = '/';
+        }
+    }
+}
+
 static void
 my_rndr_head(hoedown_buffer *ob, metadata * doc_meta, ext_definition * extension)
 {
@@ -285,9 +300,21 @@ my_rndr_head(hoedown_buffer *ob, metadata * doc_meta, ext_definition * extension
         hoedown_buffer_puts(ob, headContents);
         return;
     }
-    hoedown_buffer_puts(ob, "<!DOCTYPE html>\n<html>\n<head>\n<meta charset=\"UTF-8\">\n");
+    hoedown_buffer_puts(ob, "<!DOCTYPE html>\n<html>\n");
+    hoedown_buffer_printf(ob, "<head lang=\"%s\">\n", lang);
+    hoedown_buffer_printf(ob, "<meta charset=\"%s\">\n", charset);
+
     if (doc_meta->title) {
         hoedown_buffer_printf(ob, "<title>%s</title>\n", doc_meta->title);
+    }
+    else {
+        //hoedown_buffer_printf(ob, "<title>%s</title>\n", usr_input);
+        hoedown_buffer *tb;
+        tb = hoedown_buffer_new(264);
+        hoedown_buffer_printf(tb, "%s", usr_input);
+        html_escape_buffer(tb);
+        hoedown_buffer_printf(ob, "<title>%s</title>\n", tb->data);
+        hoedown_buffer_free(tb);
     }
     if (doc_meta->authors)
     {
