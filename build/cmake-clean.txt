@@ -2,4 +2,5 @@ libcharter.a
 scidown
 libhoedown.a
 smartypants
+md2html
 
