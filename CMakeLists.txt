@@ -39,6 +39,7 @@ if(WIN32 AND MSVC)
     set( CMAKE_DEBUG_POSTFIX "d" )
 else()
     # items for unix
+    # list(APPEND add_LIBS m) # this FAILED seems it MUST be added AFTER all others - see below
 endif()
 
 set( CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${WARNING_FLAGS} ${MSVC_FLAGS} -D_REENTRANT" )
@@ -91,7 +92,7 @@ set(${name}_HDRS
     ${dir}/utils.h
     ${dir}/version.h
     )
-add_library( ${name} ${${name}_SRCS} ${${name}_HDRS} )
+add_library( ${name} ${LIB_TYPE} ${${name}_SRCS} ${${name}_HDRS} )
 list(APPEND add_LIBS ${name})
 # deal with install, if any...
 #install( TARGETS ${name}
@@ -123,7 +124,7 @@ set(${name}_HDRS
     ${dir}/tinyexpr/tinyexpr.h
     ${dir}/csv_parser/csvparser.h
     )
-add_library( ${name} ${${name}_SRCS} ${${name}_HDRS} )
+add_library( ${name} ${LIB_TYPE} ${${name}_SRCS} ${${name}_HDRS} )
 list(APPEND add_LIBS ${name})
 # deal with install, if any...
 #install( TARGETS ${name}
@@ -131,6 +132,11 @@ list(APPEND add_LIBS ${name})
 #    LIBRARY DESTINATION lib
 #    ARCHIVE DESTINATION lib )
 #install(FILES ${${name}_HDRS} DESTINATION include)
+
+if (UNIX)
+    message(STATUS "*** UNIX: Adding math library, 'm', to 'add_LIBS', as last...")
+    list(APPEND add_LIBS m)
+endif ()
 
 #################################################
 ##### EXECUTABLES #####
