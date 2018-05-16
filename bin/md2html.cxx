@@ -293,8 +293,18 @@ static void html_escape_buffer(hoedown_buffer *hb)
     }
 }
 
-static void
-my_rndr_head(hoedown_buffer *ob, metadata * doc_meta, ext_definition * extension)
+/*  ***************************************************************
+    Handle my own document 'head'.
+    This allows the user to supply their own 'header' content,
+    essentially <!DOCTYPE ...><head>...</head>,
+    or indeed a blank file, if desired.
+    And otherwise begins to allow for the language, and charset to
+    be configured. TODO coding...
+    And if no '<title>Doc Title</title>' supplied, use the 
+    actual user input filename...
+    ***************************************************************
+*/
+static void my_rndr_head(hoedown_buffer *ob, metadata * doc_meta, ext_definition * extension)
 {
     if (headContents) { // User supplied document header
         hoedown_buffer_puts(ob, headContents);
@@ -346,6 +356,100 @@ my_rndr_head(hoedown_buffer *ob, metadata * doc_meta, ext_definition * extension
 
     hoedown_buffer_puts(ob, "</head>\n<body>\n");
 }
+
+/*  ***********************************************************************
+    Handle my own header lines, # Header 1 to ###### Header 6
+    with an ID="..." build from the content string.
+    That is - # This header - will become
+    <h1 id="this_header">This header</h1>
+    This allows for internal links to such headers, like
+    [This header](#this_header) -> <a href="#this_header">This header</a>
+    ***********************************************************************
+*/
+static void my_rndr_header(hoedown_buffer *ob, const hoedown_buffer *content, int level, const hoedown_renderer_data *data, h_counter counter, int numbering)
+{
+    if (ob->size)
+        hoedown_buffer_putc(ob, '\n');
+
+    if (content && content->size) {
+        hoedown_buffer *tb;
+        uint8_t c, pc;
+        size_t i;
+        int count = 0;
+        tb = hoedown_buffer_new(264);
+        pc = 0;
+        for (i = 0; i < content->size; i++) {
+            c = content->data[i];
+            if ((c >= 'a') && (c <= 'z')) {
+                // ok
+            }
+            else if ((c >= '0') && (c <= '9')) {
+                // ok
+            }
+            else if ((c >= 'A') && (c <= 'Z')) {
+                c += 32;    // switch to lowercase
+            }
+            else {
+                c = '_';    // Underscore for everything else
+            }
+            if (c == '_') {
+                if (!count)
+                    continue;   // do not start with underscore...
+                if (pc == '_')
+                    continue;   // do not repeat underscores...
+            }
+            else {
+                count++;    // count a normal char
+            }
+            hoedown_buffer_putc(tb, c); // add this char to buffer
+            pc = c; // keep as 'previous' char
+        }
+        if (count) {
+            // we got an 'ID' string from the 'content' string
+            hoedown_buffer_cstr(tb); // or could use hoedown_buffer_putc(tb, 0);
+            hoedown_buffer_printf(ob, "<h%d id=\"%s\">", level, tb->data);
+            hoedown_buffer_put(ob, content->data, content->size);
+            hoedown_buffer_printf(ob, "</h%d>\n", level);
+            hoedown_buffer_free(tb);    // toss buffer
+            return;
+        }
+        hoedown_buffer_free(tb);    // toss buffer,
+        // and in this unlikely case do it as before...
+        // not sure this is a good idea, but why not...
+    }
+
+    if (level > 3) {
+        hoedown_buffer_printf(ob, "<h%d id=\"toc_%d.%d.%d.%d\">", level + 1, counter.chapter, counter.section, counter.subsection, level);
+    }
+    else if (counter.subsection) {
+        hoedown_buffer_printf(ob, "<h%d id=\"toc_%d.%d.%d\">", level + 1, counter.chapter, counter.section, counter.subsection);
+    }
+    else if (counter.section) {
+        hoedown_buffer_printf(ob, "<h%d id=\"toc_%d.%d\">", level + 1, counter.chapter, counter.section);
+    }
+    else if (counter.chapter) {
+        hoedown_buffer_printf(ob, "<h%d id=\"toc_%d\">", level + 1, counter.chapter);
+    }
+
+    if (numbering && level <= 3)
+    {
+        if (counter.subsection) {
+            hoedown_buffer_printf(ob, "%d.%d.%d. ", counter.chapter, counter.section, counter.subsection);
+        }
+        else if (counter.section) {
+            hoedown_buffer_printf(ob, "%d.%d. ", counter.chapter, counter.section);
+        }
+        else if (counter.chapter) {
+            hoedown_buffer_printf(ob, "%d. ", counter.chapter);
+        }
+    }
+
+
+    if (content) hoedown_buffer_put(ob, content->data, content->size);
+
+    hoedown_buffer_printf(ob, "</h%d>\n", level + 1);
+}
+
 
 /* MAIN LOGIC */
 
@@ -400,6 +504,7 @@ main(int argc, char **argv)
     if (data.renderer == RENDERER_HTML) {
         renderer = hoedown_html_renderer_new(data.render_flags, data.toc_level, get_local());
         renderer->head = my_rndr_head;
+        renderer->header = my_rndr_header;
     }
     else if (data.renderer == RENDERER_HTML_TOC) {
         renderer = hoedown_html_toc_renderer_new(data.toc_level, get_local());
