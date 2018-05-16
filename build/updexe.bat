@@ -14,11 +14,9 @@
 
 @call :CHKCOPY
 
-@goto END
-
-@set TMPFIL1=cpp-markdownd.exe
-@set TMPFIL2=cpp-markdownd.exe
-@set TMPSRC=Debug\%TMPFIL1%
+@set TMPFIL1=md2html.exe
+@set TMPFIL2=md2html.exe
+@set TMPSRC=Release\%TMPFIL1%
 @if NOT EXIST %TMPSRC% goto ERR1
 @echo Current source %TMPSRC%
 @call dirmin %TMPSRC%
